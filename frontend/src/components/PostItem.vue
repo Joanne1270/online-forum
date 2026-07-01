@@ -73,8 +73,17 @@ export default {
 </script>
 
 <style scoped>
-.post-item { padding: 12px 0; border-bottom: 1px solid #ebeef5; cursor: pointer; }
-.post-item:hover { background: #fafafa; }
+.post-item {
+  padding: 12px 20px;
+  margin: 0 -20px;
+  border-bottom: 1px solid rgba(235, 238, 245, 0.85);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+.post-item:hover,
+.post-item:active {
+  background: rgba(255, 255, 255, 0.92);
+}
 .title-row { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
 .title { font-size: 16px; font-weight: 600; }
 .excerpt {

@@ -98,7 +98,16 @@ export default {
 </script>
 
 <style scoped>
-.reply-node { border-left: 3px solid #ebeef5; padding: 8px 12px; margin: 8px 0; }
+.reply-tree {
+  background: #fff;
+}
+.reply-node {
+  border-left: 3px solid #ebeef5;
+  padding: 12px;
+  margin: 8px 0;
+  background: #fff;
+  border-radius: 4px;
+}
 .reply-node.pinned { border-left-color: #409EFF; background: #f5faff; }
 .reply-head { display: flex; gap: 12px; align-items: center; }
 .author-link { color: #409EFF; cursor: pointer; }
@@ -150,7 +159,7 @@ export default {
 .reply-actions .text-action-btn {
   transform: translateY(-4px);
 }
-.nested-reply-box { margin-top: 8px; padding: 8px; background: #f5f7fa; border-radius: 4px; }
+.nested-reply-box { margin-top: 8px; padding: 12px; background: #fff; border: 1px solid #ebeef5; border-radius: 4px; }
 .nested-label { font-size: 12px; color: #909399; margin-bottom: 4px; }
 .nested-submit-row {
   display: flex;

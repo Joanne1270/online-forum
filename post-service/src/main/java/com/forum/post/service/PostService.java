@@ -40,6 +40,7 @@ public class PostService {
     private static final Pattern MENTION_ID_PATTERN = Pattern.compile("@\\[(\\d+)\\][^\\s@]*");
     private static final Pattern MENTION_PATTERN = Pattern.compile("@(?!#)([^\\s@\\[]{1,50})");
     private static final Duration POST_CACHE_TTL = Duration.ofMinutes(10);
+    private static final Duration BOARD_CACHE_TTL = Duration.ofMinutes(30);
 
     private final BoardMapper boardMapper;
     private final PostMapper postMapper;
@@ -59,6 +60,23 @@ public class PostService {
     private final TagService tagService;
 
     public List<BoardVO> listBoards() {
+        String cacheKey = ForumConstants.REDIS_CACHE_BOARDS;
+        Object cached = redisTemplate.opsForValue().get(cacheKey);
+        if (cached instanceof List<?> list && !list.isEmpty()) {
+            try {
+                return list.stream()
+                        .map(item -> postRedisObjectMapper.get().convertValue(item, BoardVO.class))
+                        .collect(Collectors.toList());
+            } catch (Exception ignored) {
+                redisTemplate.delete(cacheKey);
+            }
+        }
+        List<BoardVO> roots = buildBoardTree();
+        redisTemplate.opsForValue().set(cacheKey, roots, BOARD_CACHE_TTL);
+        return roots;
+    }
+
+    private List<BoardVO> buildBoardTree() {
         List<Board> all = boardMapper.findAll();
         Map<Long, BoardVO> map = new LinkedHashMap<>();
         for (Board board : all) {
@@ -97,6 +115,7 @@ public class PostService {
             }
         }
         boardMapper.insert(board);
+        invalidateBoardCache();
         return board;
     }
 
@@ -108,6 +127,7 @@ public class PostService {
         board.setBoardType(existing.getBoardType());
         board.setParentId(existing.getParentId());
         boardMapper.update(board);
+        invalidateBoardCache();
         return boardMapper.findById(board.getId());
     }
 
@@ -125,6 +145,7 @@ public class PostService {
             throw new BusinessException("该小版块下仍有帖子，无法删除");
         }
         boardMapper.delete(id);
+        invalidateBoardCache();
     }
 
     @Transactional
@@ -429,6 +450,11 @@ public class PostService {
         Post post = postMapper.findById(postId);
         if (post == null) {
             throw new BusinessException("帖子不存在");
+        }
+        String rateKey = ForumConstants.REDIS_RATE_REPLY + userId;
+        Boolean allowed = redisTemplate.opsForValue().setIfAbsent(rateKey, "1", Duration.ofSeconds(3));
+        if (Boolean.FALSE.equals(allowed)) {
+            throw new BusinessException("回复过于频繁，请稍后再试");
         }
         bannedWordService.assertClean(request.getContent());
         Reply reply = new Reply();
@@ -1092,6 +1118,10 @@ public class PostService {
 
     private void invalidatePostCache(Long postId) {
         redisTemplate.delete(ForumConstants.REDIS_POST_DETAIL + postId);
+    }
+
+    private void invalidateBoardCache() {
+        redisTemplate.delete(ForumConstants.REDIS_CACHE_BOARDS);
     }
 
     private void sendLikeMessage(Long fromUserId, Long toUserId, Long refId, String refType, Long postId, String content) {

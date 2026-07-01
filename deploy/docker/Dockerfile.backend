@@ -1,0 +1,23 @@
+# syntax=docker/dockerfile:1
+FROM docker.m.daocloud.io/library/maven:3.9-eclipse-temurin-17 AS build
+WORKDIR /src
+COPY pom.xml .
+COPY forum-common/pom.xml forum-common/pom.xml
+COPY api-gateway/pom.xml api-gateway/pom.xml
+COPY user-service/pom.xml user-service/pom.xml
+COPY post-service/pom.xml post-service/pom.xml
+COPY notification-service/pom.xml notification-service/pom.xml
+COPY file-service/pom.xml file-service/pom.xml
+COPY admin-service/pom.xml admin-service/pom.xml
+RUN mvn -pl forum-common -am dependency:go-offline -q || true
+COPY . .
+ARG MODULE=api-gateway
+RUN mvn -pl ${MODULE} -am package -DskipTests -q
+
+FROM docker.m.daocloud.io/library/eclipse-temurin:17-jre-alpine
+WORKDIR /app
+ARG MODULE=api-gateway
+COPY --from=build /src/${MODULE}/target/${MODULE}-1.0.0-SNAPSHOT.jar app.jar
+ENV JAVA_OPTS=""
+EXPOSE 8080
+ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar app.jar"]

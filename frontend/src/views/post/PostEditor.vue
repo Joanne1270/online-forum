@@ -1,5 +1,5 @@
 <template>
-  <el-card>
+  <el-card class="editor-card">
     <h2>{{ pageTitle }}</h2>
     <el-form label-width="80px">
       <el-form-item v-if="!isPublishedEdit && allPostable.length > 1" label="版块">
@@ -219,6 +219,11 @@ export default {
 </script>
 
 <style scoped>
+.editor-card {
+  background: #fff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
 .content-actions {
   display: flex;
   align-items: center;

@@ -2,6 +2,8 @@ package com.forum.user.service;
 
 import com.forum.common.constant.ForumConstants;
 import com.forum.common.exception.BusinessException;
+import com.forum.common.ratelimit.RateLimitChecker;
+import com.forum.common.ratelimit.RateLimitKeys;
 import com.forum.common.util.JwtUtil;
 import com.forum.common.util.PhoneUtil;
 import com.forum.common.dto.BanRequest;
@@ -12,6 +14,7 @@ import com.forum.user.entity.User;
 import com.forum.user.mapper.UserFollowMapper;
 import com.forum.user.mapper.UserMapper;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -28,9 +31,11 @@ public class UserService {
     private final UserMapper userMapper;
     private final UserFollowMapper userFollowMapper;
     private final ProfileChangeService profileChangeService;
+    private final UserCacheService userCacheService;
     private final PostClient postClient;
     private final VerificationCodeService verificationCodeService;
     private final EmailService emailService;
+    private final StringRedisTemplate redisTemplate;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
 
     public AuthResponse register(RegisterRequest request) {
@@ -74,6 +79,7 @@ public class UserService {
         if (!PhoneUtil.isValid(phone)) {
             throw new BusinessException("请输入11位有效手机号");
         }
+        assertLoginRateLimit(phone);
         User user = userMapper.findByPhone(phone);
         if (user == null || !passwordEncoder.matches(request.getPassword(), user.getPasswordHash())) {
             throw new BusinessException("手机号或密码错误");
@@ -84,13 +90,31 @@ public class UserService {
         if (user.getStatus() == ForumConstants.USER_STATUS_BANNED) {
             if (isBanExpired(user)) {
                 unbanUser(user.getId());
-                user = userMapper.findById(user.getId());
+                user = userCacheService.getById(user.getId());
             } else {
                 throw new BusinessException(403, buildBanMessage(user));
             }
         }
         String token = JwtUtil.generateToken(user.getId(), user.getNickname(), user.getRole());
         return new AuthResponse(token, UserProfileVO.from(user));
+    }
+
+    private void assertLoginRateLimit(String phone) {
+        String key = RateLimitKeys.loginWindowKey(phone, 60);
+        RateLimitChecker.Counter counter = new RateLimitChecker.Counter() {
+            @Override
+            public Long increment(String rateKey) {
+                return redisTemplate.opsForValue().increment(rateKey);
+            }
+
+            @Override
+            public void expire(String rateKey, Duration ttl) {
+                redisTemplate.expire(rateKey, ttl);
+            }
+        };
+        if (!RateLimitChecker.allow(counter, key, 10, Duration.ofMinutes(1))) {
+            throw new BusinessException("登录尝试过于频繁，请稍后再试");
+        }
     }
 
     public SendCodeResponse sendResetCode(SendCodeRequest request) {
@@ -128,7 +152,7 @@ public class UserService {
     }
 
     public UserProfileVO getProfile(Long userId) {
-        User user = userMapper.findById(userId);
+        User user = userCacheService.getById(userId);
         if (user == null) {
             throw new BusinessException("用户不存在");
         }
@@ -138,7 +162,7 @@ public class UserService {
     }
 
     public UserProfileVO updateProfile(Long userId, ProfileUpdateRequest request) {
-        User user = userMapper.findById(userId);
+        User user = userCacheService.getById(userId);
         if (user == null) {
             throw new BusinessException("用户不存在");
         }
@@ -163,6 +187,7 @@ public class UserService {
         if (request.getEmail() != null || request.getBio() != null || request.getGender() != null
                 || request.getBirthMonth() != null) {
             userMapper.updateProfile(user);
+            userCacheService.invalidate(userId);
         }
         return getProfile(userId);
     }
@@ -199,7 +224,7 @@ public class UserService {
     }
 
     public PublicUserProfileVO getPublicProfile(Long targetId, Long viewerId, String viewerRole) {
-        User user = userMapper.findById(targetId);
+        User user = userCacheService.getById(targetId);
         if (user == null) {
             throw new BusinessException("用户不存在");
         }
@@ -273,6 +298,7 @@ public class UserService {
         Integer following = request.getShowFollowing() == null ? user.getPrivacyFollowing() : toPrivacyValue(request.getShowFollowing());
         Integer followers = request.getShowFollowers() == null ? user.getPrivacyFollowers() : toPrivacyValue(request.getShowFollowers());
         userMapper.updatePrivacy(userId, posts, favorites, replies, following, followers);
+        userCacheService.invalidate(userId);
         return getProfile(userId);
     }
 
@@ -318,7 +344,7 @@ public class UserService {
     }
 
     public UserVO getById(Long id) {
-        User user = userMapper.findById(id);
+        User user = userCacheService.getById(id);
         if (user == null) {
             throw new BusinessException("用户不存在");
         }
@@ -341,7 +367,7 @@ public class UserService {
         if (followerId.equals(followeeId)) {
             throw new BusinessException("不能关注自己");
         }
-        User followee = userMapper.findById(followeeId);
+        User followee = userCacheService.getById(followeeId);
         if (followee == null) {
             throw new BusinessException("用户不存在");
         }
@@ -396,10 +422,12 @@ public class UserService {
         }
         LocalDateTime bannedUntil = resolveBannedUntil(request);
         userMapper.updateBanStatus(id, ForumConstants.USER_STATUS_BANNED, bannedUntil);
+        userCacheService.invalidate(id);
     }
 
     public void unbanUser(Long id) {
         userMapper.updateBanStatus(id, ForumConstants.USER_STATUS_NORMAL, null);
+        userCacheService.invalidate(id);
     }
 
     public void setUserRole(Long id, String role) {
@@ -414,6 +442,7 @@ public class UserService {
             throw new BusinessException("该账号已注销");
         }
         userMapper.updateRole(id, role);
+        userCacheService.invalidate(id);
     }
 
     public void deactivateUser(Long id) {
@@ -438,6 +467,7 @@ public class UserService {
                 placeholderNickname,
                 invalidPassword
         );
+        userCacheService.invalidate(id);
     }
 
     public List<UserVO> listUsers(int page, int size) {

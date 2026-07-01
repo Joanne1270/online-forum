@@ -23,6 +23,7 @@ public class ProfileChangeService {
 
     private final ProfileChangeRequestMapper profileChangeRequestMapper;
     private final UserMapper userMapper;
+    private final UserCacheService userCacheService;
     private final NotificationClient notificationClient;
 
     public void submitChange(Long userId, String fieldType, String newValue) {
@@ -86,6 +87,7 @@ public class ProfileChangeService {
         }
         userMapper.updateProfile(user);
         profileChangeRequestMapper.updateStatus(id, ForumConstants.PROFILE_REQUEST_APPROVED);
+        userCacheService.invalidate(request.getUserId());
         notifyUser(request.getUserId(), ForumConstants.TAG_PROFILE_APPROVED,
                 ForumConstants.PROFILE_FIELD_NICKNAME.equals(request.getFieldType()) ? "昵称" : "头像",
                 true);

@@ -60,8 +60,23 @@ Apply & Restart 后重试 `docker compose up -d`。
 ### 2. 编译后端
 
 ```bash
+# 含单元测试
+mvn clean package
+
+# 跳过测试（快速打包）
 mvn clean package -DskipTests
 ```
+
+### 2b. 一键 Docker 全栈（可选）
+
+基础设施就绪后，可构建并启动全部微服务与前端：
+
+```bash
+cd deploy
+docker compose --profile app up -d --build
+```
+
+访问 http://localhost:8088 。详见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。
 
 ### 3. 启动各微服务（IDEA 或 Maven）
 
@@ -102,6 +117,22 @@ npm run serve
 - 通知：回复提醒、@提醒、点赞提醒
 - 文件：图片上传（本地存储，经 Gateway 访问）
 - 管理后台：数据统计、版块 CRUD、删帖、用户封禁
+- **缓存**：版块树、用户信息、帖子详情（Redis）
+- **限流**：Gateway 全局限流、发帖/回复/登录频率控制
+- **单元测试**：`forum-common` 工具类、`post-service` 内容规范化
+- **容器化**：`docker compose --profile app` 一键部署
+
+## 工程能力
+
+| 能力 | 状态 |
+|------|------|
+| 分布式微服务 | Nacos + Gateway + Feign + RocketMQ |
+| Redis 缓存 | 帖子/热门/版块/用户 |
+| 限流 | Gateway + 业务层 Redis |
+| Docker 部署 | 基础设施 + app profile 全栈 |
+| 单元测试 | `mvn test` |
+
+详细部署与多实例扩展见 [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)。
 
 ## API 入口
 
@@ -118,6 +149,7 @@ Postman 集合见 [docs/api.postman_collection.json](docs/api.postman_collection
 | MYSQL_PASSWORD | root123 |
 | REDIS_HOST | 127.0.0.1 |
 | ROCKETMQ_NAMESRV | 127.0.0.1:9876 |
+| MYSQL_PORT | 3307（宿主机连 Docker MySQL；容器内为 3306） |
 
 ## 技术栈对照（实习计划）
 

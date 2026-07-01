@@ -35,7 +35,12 @@ public final class ForumConstants {
 
     public static final String REDIS_HOT_POSTS = "hot:posts:";
     public static final String REDIS_POST_DETAIL = "post:detail:v2:";
+    public static final String REDIS_CACHE_BOARDS = "cache:boards:tree";
+    public static final String REDIS_CACHE_USER = "cache:user:";
     public static final String REDIS_RATE_POST = "rate:post:";
+    public static final String REDIS_RATE_REPLY = "rate:reply:";
+    public static final String REDIS_RATE_LOGIN = "rate:login:";
+    public static final String REDIS_RATE_API = "rate:api:";
 
     public static final String ROLE_USER = "USER";
     public static final String ROLE_ADMIN = "ADMIN";

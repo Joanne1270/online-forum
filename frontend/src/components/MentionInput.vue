@@ -324,6 +324,8 @@ export default {
 }
 .textarea-wrap {
   position: relative;
+  background: #fff;
+  border-radius: 4px;
 }
 .textarea-backdrop {
   position: absolute;
@@ -341,8 +343,10 @@ export default {
   overflow: hidden;
   pointer-events: none;
   color: #606266;
+  background: #fff;
   border: 1px solid transparent;
   box-sizing: border-box;
+  border-radius: 4px;
 }
 .textarea-backdrop ::v-deep .tag-complete {
   color: #409EFF;
@@ -350,13 +354,14 @@ export default {
 .textarea-backdrop ::v-deep .mention-complete {
   color: #0D47A1;
 }
+.mention-input >>> .textarea-field .el-textarea__inner {
+  background: #fff !important;
+}
 .mention-input >>> .textarea-field:not(.is-composing) .el-textarea__inner {
-  background: transparent !important;
   color: transparent !important;
   caret-color: #606266;
 }
 .mention-input >>> .textarea-field.is-composing .el-textarea__inner {
-  background: #fff !important;
   color: #606266 !important;
 }
 .at-dropdown {

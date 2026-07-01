@@ -1,3 +1,11 @@
+x-app-env: &app-env
+  MYSQL_HOST: mysql
+  MYSQL_PORT: 3306
+  MYSQL_PASSWORD: root123
+  REDIS_HOST: redis
+  NACOS_ADDR: nacos:8848
+  ROCKETMQ_NAMESRV: rocketmq-namesrv:9876
+
 services:
   mysql:
     image: docker.m.daocloud.io/library/mysql:8.0
@@ -74,6 +82,140 @@ services:
     volumes:
       - ./rocketmq/broker.conf:/home/rocketmq/rocketmq-5.1.4/conf/broker.conf
 
+  api-gateway:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: deploy/docker/Dockerfile.backend
+      args:
+        MODULE: api-gateway
+    container_name: forum-api-gateway
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      nacos:
+        condition: service_healthy
+      rocketmq-broker:
+        condition: service_started
+    environment:
+      <<: *app-env
+    ports:
+      - "8080:8080"
+
+  user-service:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: deploy/docker/Dockerfile.backend
+      args:
+        MODULE: user-service
+    container_name: forum-user-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      nacos:
+        condition: service_healthy
+    environment:
+      <<: *app-env
+    ports:
+      - "8081:8081"
+
+  post-service:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: deploy/docker/Dockerfile.backend
+      args:
+        MODULE: post-service
+    container_name: forum-post-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      nacos:
+        condition: service_healthy
+      rocketmq-broker:
+        condition: service_started
+    environment:
+      <<: *app-env
+    ports:
+      - "8082:8082"
+
+  notification-service:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: deploy/docker/Dockerfile.backend
+      args:
+        MODULE: notification-service
+    container_name: forum-notification-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+      rocketmq-broker:
+        condition: service_started
+    environment:
+      <<: *app-env
+    ports:
+      - "8083:8083"
+
+  file-service:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: deploy/docker/Dockerfile.backend
+      args:
+        MODULE: file-service
+    container_name: forum-file-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    environment:
+      <<: *app-env
+    volumes:
+      - file_uploads:/app/uploads
+    ports:
+      - "8084:8084"
+
+  admin-service:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: deploy/docker/Dockerfile.backend
+      args:
+        MODULE: admin-service
+    container_name: forum-admin-service
+    depends_on:
+      mysql:
+        condition: service_healthy
+      nacos:
+        condition: service_healthy
+    environment:
+      <<: *app-env
+    ports:
+      - "8085:8085"
+
+  frontend:
+    profiles: ["app"]
+    build:
+      context: ..
+      dockerfile: deploy/docker/Dockerfile.frontend
+    container_name: forum-frontend
+    depends_on:
+      - api-gateway
+    ports:
+      - "8088:80"
+
 volumes:
   mysql_data:
   redis_data:
+  file_uploads:

@@ -277,11 +277,45 @@ export default {
 
 <style>
 html, body, #app { height: 100%; margin: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f7fa; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: #9eb0bc;
+}
 .layout {
+  position: relative;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: #9eb0bc;
+}
+.layout:not(.auth-layout)::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  background: url('~@/assets/images/app-bg.png') center center / cover no-repeat;
+  filter: brightness(0.92) saturate(0.65);
+  pointer-events: none;
+}
+.layout:not(.auth-layout)::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    #409EFF 0,
+    #409EFF 60px,
+    rgba(64, 158, 255, 0.78) 130px,
+    rgba(64, 158, 255, 0.42) 210px,
+    rgba(64, 158, 255, 0.16) 290px,
+    transparent 380px
+  );
+}
+.layout > * {
+  position: relative;
+  z-index: 1;
 }
 .layout.auth-layout {
   height: 100vh;
@@ -292,11 +326,27 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   flex: 1;
   padding: 0 !important;
   overflow: hidden;
-  background: #4a86b8;
+  background: transparent;
 }
 .layout .el-main.auth-main {
   padding: 0 !important;
   overflow: hidden;
+}
+.layout:not(.auth-layout) .el-main {
+  background: transparent;
+}
+.layout:not(.auth-layout) .el-card {
+  background: rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow: 0 6px 24px rgba(30, 90, 140, 0.08);
+}
+.layout:not(.auth-layout) .el-aside {
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  border-right: 1px solid rgba(255, 255, 255, 0.55);
 }
 .header { display: flex; align-items: center; background: #409EFF; color: #fff; padding: 0 20px; height: 60px !important; flex-shrink: 0; }
 .header-back-btn {

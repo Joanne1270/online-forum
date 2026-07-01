@@ -348,6 +348,11 @@ export default {
 </script>
 
 <style scoped>
+.post-detail-card {
+  background: #fff !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
 .post-detail-card ::v-deep .el-card__header {
   display: none;
 }
@@ -451,6 +456,7 @@ export default {
 }
 .post-body {
   padding: 20px;
+  background: #fff;
 }
 .post-tags {
   display: flex;
@@ -470,15 +476,25 @@ export default {
 .post-tag:hover {
   background: rgba(255, 255, 255, 0.32);
 }
-.content { min-height: 120px; }
-.reply-box { margin-bottom: 16px; }
+.content { min-height: 120px; background: #fff; }
+.reply-box {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: #fff;
+  border: 1px solid #ebeef5;
+  border-radius: 4px;
+}
+.reply-sort {
+  margin-bottom: 12px;
+  font-size: 13px;
+  background: #fff;
+}
 .reply-submit-row {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-top: 8px;
 }
-.reply-sort { margin-bottom: 12px; font-size: 13px; }
 .sort-label { color: #606266; }
 .sort-toggle {
   color: #409EFF;
