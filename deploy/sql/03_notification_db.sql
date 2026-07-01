@@ -1,0 +1,15 @@
+CREATE DATABASE IF NOT EXISTS notification_db DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE notification_db;
+
+CREATE TABLE IF NOT EXISTS notification (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    user_id BIGINT NOT NULL,
+    type VARCHAR(30) NOT NULL COMMENT 'POST_REPLY/MENTION/LIKE',
+    ref_id BIGINT DEFAULT NULL,
+    ref_type VARCHAR(20) DEFAULT NULL COMMENT 'POST/REPLY',
+    from_user_id BIGINT DEFAULT NULL,
+    content VARCHAR(500) NOT NULL,
+    read_flag TINYINT NOT NULL DEFAULT 0,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_user_read (user_id, read_flag, created_at)
+) ENGINE=InnoDB;

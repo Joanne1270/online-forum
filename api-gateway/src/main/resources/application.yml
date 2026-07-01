@@ -1,0 +1,55 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+        fail-fast: false
+    gateway:
+      discovery:
+        locator:
+          enabled: false
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOriginPatterns: "*"
+            allowedMethods: "*"
+            allowedHeaders: "*"
+            allowCredentials: true
+      routes:
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/api/auth/**,/api/users/**
+        - id: post-service
+          uri: lb://post-service
+          predicates:
+            - Path=/api/boards/**,/api/posts/**,/api/replies/**,/api/reports/**,/api/tags/**
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/api/notifications/**
+        - id: file-static
+          uri: lb://file-service
+          predicates:
+            - Path=/api/files/uploads/**
+          filters:
+            - RewritePath=/api/files/uploads/(?<segment>.*), /uploads/${segment}
+        - id: file-service
+          uri: lb://file-service
+          predicates:
+            - Path=/api/files/**
+        - id: admin-service
+          uri: lb://admin-service
+          predicates:
+            - Path=/api/admin/**
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

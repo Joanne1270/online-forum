@@ -1,0 +1,59 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: user-service
+  mail:
+    host: smtp-mail.outlook.com
+    port: 587
+    username: liuli_jin@outlook.com
+    password: ${MAIL_PASSWORD:}
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+            required: true
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3307}/user_db?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai
+    username: root
+    password: ${MYSQL_PASSWORD:root123}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  data:
+    redis:
+      host: ${REDIS_HOST:127.0.0.1}
+      port: 6379
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_ADDR:127.0.0.1:8848}
+        fail-fast: false
+
+mybatis:
+  configuration:
+    map-underscore-to-camel-case: true
+
+forum:
+  mail:
+    from: liuli_jin@outlook.com
+    from-name: 在线社区论坛
+
+logging:
+  level:
+    root: info
+    com.alibaba.nacos: warn
+    com.alibaba.nacos.client: error
+    com.alibaba.nacos.client.naming: error
+    com.alibaba.nacos.client.config: error
+    org.springframework.cloud.loadbalancer: warn
+    org.springframework.cloud.openfeign: warn
+    com.zaxxer.hikari: warn
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info

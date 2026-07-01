@@ -1,0 +1,79 @@
+services:
+  mysql:
+    image: docker.m.daocloud.io/library/mysql:8.0
+    container_name: forum-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      TZ: Asia/Shanghai
+    ports:
+      # 3307 avoids conflict with a local MySQL on 3306 (IDEA runs on host, not in Docker)
+      - "3307:3306"
+    volumes:
+      - ./sql:/docker-entrypoint-initdb.d
+      - mysql_data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot123"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: docker.m.daocloud.io/library/redis:7-alpine
+    container_name: forum-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+
+  nacos:
+    # Apple Silicon 需用 amd64 镜像（Docker Desktop 会通过 Rosetta 模拟）
+    platform: linux/amd64
+    image: docker.m.daocloud.io/nacos/nacos-server:v2.3.2
+    container_name: forum-nacos
+    environment:
+      MODE: standalone
+      SPRING_DATASOURCE_PLATFORM: ""
+      NACOS_AUTH_ENABLE: "false"
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+  rocketmq-namesrv:
+    platform: linux/amd64
+    image: docker.m.daocloud.io/apache/rocketmq:5.1.4
+    container_name: forum-rocketmq-namesrv
+    ports:
+      - "9876:9876"
+    command: sh mqnamesrv
+    healthcheck:
+      test: ["CMD", "sh", "-c", "nc -z localhost 9876"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  rocketmq-broker:
+    platform: linux/amd64
+    image: docker.m.daocloud.io/apache/rocketmq:5.1.4
+    container_name: forum-rocketmq-broker
+    depends_on:
+      rocketmq-namesrv:
+        condition: service_started
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+      - "10912:10912"
+    environment:
+      NAMESRV_ADDR: rocketmq-namesrv:9876
+    command: sh mqbroker -n rocketmq-namesrv:9876 -c /home/rocketmq/rocketmq-5.1.4/conf/broker.conf
+    volumes:
+      - ./rocketmq/broker.conf:/home/rocketmq/rocketmq-5.1.4/conf/broker.conf
+
+volumes:
+  mysql_data:
+  redis_data:

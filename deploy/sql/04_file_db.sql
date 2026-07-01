@@ -1,0 +1,14 @@
+CREATE DATABASE IF NOT EXISTS file_db DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+USE file_db;
+
+CREATE TABLE IF NOT EXISTS file_meta (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    original_name VARCHAR(255) NOT NULL,
+    stored_name VARCHAR(255) NOT NULL,
+    url VARCHAR(500) NOT NULL,
+    uploader_id BIGINT NOT NULL,
+    size BIGINT NOT NULL,
+    mime VARCHAR(100) NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_uploader (uploader_id)
+) ENGINE=InnoDB;

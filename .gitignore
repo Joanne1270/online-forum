@@ -1,0 +1,11 @@
+target/
+.idea/
+*.iml
+uploads/
+node_modules/
+dist/
+.DS_Store
+*.log
+.env
+.env.local
+**/.env
